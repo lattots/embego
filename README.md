@@ -189,3 +189,14 @@ With embeddings it is very easy to compare sentiments (ie. meanings) of two or m
 ### Text search
 
 Other use case is text search. This is similar to sentiment analysis but on an even more applied level. With sentence embeddings it is possible to for example search for information from large texts.
+
+Both sentiment analysis and search can be done by calculating the cosine similarity of two or more sentences/documents. Util package has function for calculating just that.
+
+```go
+import "github.com/lattots/embego/pkg/util"
+
+# Create embeddings for two or more sentences/documents
+var v1, v2 []float64
+
+similarity := util.CosineSimilarity(v1, v2)
+```
