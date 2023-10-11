@@ -143,19 +143,19 @@ import (
 )
 
 // Load embedding model from word vectors file.
-eModel, err := util.LoadEmbeddingModel("/home/otso/go/src/embeddings-api/data/word_vectors.txt")
+eModel, err := util.LoadEmbeddingModel("/paht/to/vector/model")
 if err != nil {
     panic(err)
 }
 
 // Load sentence tokenizer if you want to create sentence embeddings.
-sTokenizer, err := util.LoadSentenceTokenizer("/home/otso/go/src/embeddings-api/data/finnish.json")
+sTokenizer, err := util.LoadSentenceTokenizer("/path/to/sentence/tokenizer/model")
 if err != nil {
     panic(err)
 }
 
 // Load token frequency database if you want to create sentence or document embeddings.
-db, err := gorm.Open(sqlite.Open("/home/otso/go/src/embeddings-api/data/token_frequency.db"), &gorm.Config{})
+db, err := gorm.Open(sqlite.Open("/path/to/token/frequency/database"), &gorm.Config{})
 if err != nil {
     panic(err)
 }
