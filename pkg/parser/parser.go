@@ -2,37 +2,22 @@ package parser
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/lattots/embego/pkg/util"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
-type Product struct {
-	Id     int     `json:"id"`
-	Title  string  `json:"title"`
-	Desc   string  `json:"desc"`
-	Price  float64 `json:"price"`
-	Gender string  `json:"gender"`
-}
-
-type ProductCatalog struct {
-	Products []Product
-}
-
 func ProcessCorpus(inputFilename string, outputFilename string) (tokens []string, err error) {
-	// Product catalog is read from json file
-	products, err := readCatalog(inputFilename)
+
+	fileContent, err := os.ReadFile(inputFilename)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("Successfully read product catalog")
-	catalog := ProductCatalog{
-		Products: products,
-	}
 
-	// Text corpus is formed from product information.
-	corpus := formCorpus(catalog)
+	corpus := string(fileContent)
+	fmt.Println("File read to string")
 
 	// Text corpus is tokenized to a slice of tokens.
 	tokens, err = util.Tokenize(corpus)
@@ -60,7 +45,10 @@ func InitFrequencyDB(dbFilename string, tokens []string) (TokenCount, error) {
 	}
 
 	// Drop "tokens" table if it already exists.
-	db.Migrator().DropTable(&util.Token{})
+	err = db.Migrator().DropTable(&util.Token{})
+	if err != nil {
+		return nil, err
+	}
 	// Schema for database is created.
 
 	err = db.AutoMigrate(&util.Token{})
@@ -81,7 +69,7 @@ func InitFrequencyDB(dbFilename string, tokens []string) (TokenCount, error) {
 		}
 	}()
 
-	var tokenCount TokenCount = make(TokenCount)
+	tokenCount := make(TokenCount)
 
 	for _, t := range tokens {
 		tokenCount[t] += 1

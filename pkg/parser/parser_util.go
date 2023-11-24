@@ -1,9 +1,6 @@
 package parser
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
 	"os"
 	"strings"
 
@@ -16,31 +13,6 @@ type Token struct {
 }
 
 type TokenCount map[string]int
-
-func readCatalog(filename string) (products []Product, err error) {
-	jsonFile, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer func(jsonFile *os.File) {
-		err := jsonFile.Close()
-		if err != nil {
-
-		}
-	}(jsonFile)
-
-	byteValue, err := io.ReadAll(jsonFile)
-	if err != nil {
-		return nil, err
-	}
-
-	err = json.Unmarshal(byteValue, &products)
-	if err != nil {
-		return nil, err
-	}
-
-	return products, nil
-}
 
 // Saves token frequencies to database. Returns error/nil.
 func saveTokenFrequency(db *gorm.DB, tokenCount TokenCount) error {
@@ -58,16 +30,6 @@ func saveTokenFrequency(db *gorm.DB, tokenCount TokenCount) error {
 
 	// If the save is successful, the function returns nil.
 	return nil
-}
-
-func formCorpus(products ProductCatalog) string {
-	var corpus strings.Builder
-	for _, product := range products.Products {
-		productText := fmt.Sprintf("%v %v %v", product.Title, product.Desc, product.Gender)
-		corpus.WriteString(productText)
-		corpus.WriteString(" ")
-	}
-	return corpus.String()
 }
 
 func saveTokens(outputFilename string, tokens []string) error {

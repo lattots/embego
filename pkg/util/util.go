@@ -1,4 +1,4 @@
-// Provides utilities for embeddings-api.
+// Package util provides utilities for embeddings-api.
 package util
 
 import (
@@ -26,35 +26,55 @@ type Result struct {
 	Tokens []string `json:"lemmatized_words"`
 }
 
-// Tokenizes text to a slice of words. Removes all special characters from tokens.
+type EmptySliceError struct {
+	Message string
+}
+
+func (e *EmptySliceError) Error() string {
+	return e.Message
+}
+
+// Tokenize tokenizes text to a slice of words. Removes all special characters from tokens.
 func Tokenize(text string) (tokens []string, err error) {
+
+	// All whitespace characters, including newline, are converted to spaces.
+	newline := regexp.MustCompile(`\s`)
+	text = newline.ReplaceAllString(text, " ")
+
+	// Special characters and numbers are removed from all words.
+	special := regexp.MustCompile(`[^\p{L} ]`)
+	text = special.ReplaceAllString(text, "")
+
 	// Text is split at spaces.
-	words := strings.Fields(text)
+	words := strings.Fields(strings.ToLower(text))
 
-	// These characters are removed from all words
-	removedChars := regexp.MustCompile(`[.?!\n()\[\]{},:;'"“”/\\+=\-&%#|²³\d]`)
-	for _, word := range words {
-		// Specified characters are removed from all words.
-		word := removedChars.ReplaceAllString(word, "")
-		// All words are converted to lower case.
-		token := strings.ToLower(word)
-		if token != "" {
-			// Cleaned token is added to tokens.
-			tokens = append(tokens, token)
-
-		}
+	// If there are no words to tokenize the function returns an error.
+	if len(words) == 0 {
+		return nil, &EmptySliceError{"NO WORDS IN TEXT TO TOKENIZE"}
 	}
-	// Tokens are lemmatized.
-	tokens, err = lemmatize(tokens)
+
+	// Words are lemmatized.
+	words, err = lemmatize(words)
 	if err != nil {
 		return nil, err
+	}
+
+	for _, w := range words {
+		if w != "" {
+			// Cleaned word is added to tokens.
+			tokens = append(tokens, w)
+		}
+	}
+
+	if len(tokens) == 0 {
+		return nil, &EmptySliceError{"NO TOKENS IN FINAL TOKEN LIST"}
 	}
 
 	// Slice of clean tokens is returned.
 	return tokens, nil
 }
 
-// Gets frequency for given token. Returns frequency and error/nil.
+// GetTokenFrequency gets frequency for given token. Returns frequency and error/nil.
 func GetTokenFrequency(token string, db *gorm.DB) (freq int, err error) {
 	if err = db.Model(Token{}).Select("count").Where("token = ?", token).Scan(&freq).Error; err != nil {
 		return 0, err
@@ -62,13 +82,13 @@ func GetTokenFrequency(token string, db *gorm.DB) (freq int, err error) {
 	return freq, nil
 }
 
-// Loads embedding model from file. Returns embedding model and error/nil.
+// LoadEmbeddingModel loads embedding model from file. Returns embedding model and error/nil.
 func LoadEmbeddingModel(filename string) (embedding.Embeddings, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
-	// Pre trained embedding model is loaded from file.
+	// Pre-trained embedding model is loaded from file.
 	model, err := embedding.Load(file)
 	if err != nil {
 		return nil, err
@@ -76,7 +96,7 @@ func LoadEmbeddingModel(filename string) (embedding.Embeddings, error) {
 	return model, nil
 }
 
-// Loads sentence tokenizer from file. Returns tokenizer and error/nil.
+// LoadSentenceTokenizer loads sentence tokenizer from file. Returns tokenizer and error/nil.
 func LoadSentenceTokenizer(filename string) (*sentences.DefaultSentenceTokenizer, error) {
 	// Training data is loaded from file.
 	// Use data from https://github.com/neurosnap/sentences/data/
@@ -103,16 +123,16 @@ func vectorLength(v []float64) (length float64) {
 	return math.Sqrt(sum)
 }
 
-// Scales vector a length of 1.
+// NormalizeVector scales vector a length of 1.
 func NormalizeVector(vector []float64) []float64 {
-	len := vectorLength(vector)
+	vecLen := vectorLength(vector)
 	for i := range vector {
-		vector[i] = vector[i] / len
+		vector[i] = vector[i] / vecLen
 	}
 	return vector
 }
 
-// Calculates the cosine similarity of two vectors.
+// CosineSimilarity calculates the cosine similarity of two vectors.
 func CosineSimilarity(v1 []float64, v2 []float64) (similarity float64) {
 	var product float64
 	for i := range v1 {
@@ -141,7 +161,12 @@ func lemmatize(tokens []string) ([]string, error) {
 		fmt.Println("Error making request:", err)
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(resp.Body)
 
 	// Read the response body
 	body, err := io.ReadAll(resp.Body)
