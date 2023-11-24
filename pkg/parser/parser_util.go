@@ -32,16 +32,20 @@ func saveTokenFrequency(db *gorm.DB, tokenCount TokenCount) error {
 	return nil
 }
 
+// saveTokens saves all tokens to a txt file. This file can be used later to train embedding models.
 func saveTokens(outputFilename string, tokens []string) error {
+
+	// Text file is created.
 	outputTXTFile, err := os.Create(outputFilename)
 	if err != nil {
 		return err
 	}
 
+	// Text file is closed when possible.
 	defer func(outputTXTFile *os.File) {
 		err := outputTXTFile.Close()
 		if err != nil {
-
+			panic(err)
 		}
 	}(outputTXTFile)
 

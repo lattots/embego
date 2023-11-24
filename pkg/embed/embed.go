@@ -28,12 +28,14 @@ type vec = vector.Vector
 
 // SentenceEmbedding creates embeddings for each sentence in text. Returns a slice of type Sentence and error.
 func SentenceEmbedding(text string, sTokenizer *sentences.DefaultSentenceTokenizer, eModel embedding.Embeddings, db *gorm.DB, a float64) ([]Sentence, error) {
+
 	// Tokenize the input text into a slice of sentences
 	textSens := sTokenizer.Tokenize(text)
 
 	// Slice of individual sentences from text
 	var sens []Sentence
 
+	// Each sentence is tokenized and added to the slice of sentences.
 	for _, sen := range textSens {
 		tokens, err := util.Tokenize(sen.Text)
 		if err != nil {
@@ -75,6 +77,7 @@ func SentenceEmbedding(text string, sTokenizer *sentences.DefaultSentenceTokeniz
 
 // DocumentEmbedding creates single embedding for the text provided. Returns slice of float64 and error.
 func DocumentEmbedding(text string, eModel embedding.Embeddings, db *gorm.DB, a float64) ([]float64, error) {
+
 	// Text is split to a slice of tokens.
 	tokens, err := util.Tokenize(text)
 	if err != nil {
@@ -84,6 +87,7 @@ func DocumentEmbedding(text string, eModel embedding.Embeddings, db *gorm.DB, a 
 	// Slice that contains all word embeddings of text. This will be populated later.
 	var wordEmbeddings []Embedding
 
+	// Embedding for each token is created and added to the slice of embeddings.
 	for _, token := range tokens {
 		// Embedding is retrieved for token.
 		wordE, err := Embed(eModel, token)
@@ -108,6 +112,7 @@ func DocumentEmbedding(text string, eModel embedding.Embeddings, db *gorm.DB, a 
 
 // Embed creates single embedding for token. Returns Embedding and error.
 func Embed(eModel embedding.Embeddings, token string) (Embedding, error) {
+
 	// Vector corresponding to token is retrieved from eModel.
 	vec, exists := eModel.Find(token)
 
@@ -126,6 +131,8 @@ func Embed(eModel embedding.Embeddings, token string) (Embedding, error) {
 
 // Creates embeddings for all tokens in a sentence.
 func (s *Sentence) createEmbeddings(eModel embedding.Embeddings) {
+
+	// Embedding for each token in a sentence is created and added to the embeddings of sentence object.
 	for _, t := range s.Tokens {
 		e, err := Embed(eModel, t)
 		if err != nil {
@@ -139,10 +146,15 @@ func (s *Sentence) createEmbeddings(eModel embedding.Embeddings) {
 
 // Creates single embedding from all embeddings. Returns single embedding and error.
 func multiWordVec(embeddings []Embedding, db *gorm.DB, a float64) (vector []float64, err error) {
+
+	// Final vector that will contain the multi-word vector.
 	vector = make([]float64, len(embeddings[0].Vector))
+
 	if len(embeddings) == 0 {
 		log.Fatal("Error creating multi word vector for slice of length 0")
 	}
+
+	// Multi-word vector for all embeddings is calculated.
 	for _, e := range embeddings {
 		tokenFreq, err := util.GetTokenFrequency(e.Token, db)
 		if err != nil {
@@ -153,5 +165,6 @@ func multiWordVec(embeddings []Embedding, db *gorm.DB, a float64) (vector []floa
 		vector = vec.Sum(vector, tokenVector.Scale(scalar))
 	}
 	vector = vec.Scale(vector, float64(1)/float64(len(embeddings)))
+
 	return vector, nil
 }

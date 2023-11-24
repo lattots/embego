@@ -1,3 +1,4 @@
+// Running this program will initialize new embedding model training data to the data directory.
 package main
 
 import (
@@ -5,9 +6,9 @@ import (
 )
 
 const (
-	inputFilename    = "/home/otso/go/src/embeddings-api/data/varuste-net_products.json"
-	outputFilename   = "/home/otso/go/src/embeddings-api/data/vocabulary.txt"
-	databaseFilename = "/home/otso/go/src/embeddings-api/data/token_frequency.db"
+	inputFilename    = "../../data/english/corpus.txt"
+	outputFilename   = "../../data/english/vocabulary.txt"
+	databaseFilename = "../../data/english/token_frequency.db"
 )
 
 func main() {

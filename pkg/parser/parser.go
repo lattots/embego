@@ -1,3 +1,4 @@
+// Package parser provides tools for parsing text corpora. Parser is mainly used for initializing new vector model training data.
 package parser
 
 import (
@@ -9,13 +10,14 @@ import (
 	"gorm.io/gorm"
 )
 
+// ProcessCorpus parses a corpus text file to a slice of tokens.
 func ProcessCorpus(inputFilename string, outputFilename string) (tokens []string, err error) {
 
+	// Contents of text file are read to a single corpus string.
 	fileContent, err := os.ReadFile(inputFilename)
 	if err != nil {
 		return nil, err
 	}
-
 	corpus := string(fileContent)
 	fmt.Println("File read to string")
 
@@ -33,11 +35,12 @@ func ProcessCorpus(inputFilename string, outputFilename string) (tokens []string
 	}
 	fmt.Printf("Vocabulary saved to file: %v\n", outputFilename)
 
-	// Slice of tokens is returned.
 	return tokens, err
 }
 
+// InitFrequencyDB calculates the frequency of all tokens in a corpus and saves these frequencies to a database.
 func InitFrequencyDB(dbFilename string, tokens []string) (TokenCount, error) {
+
 	// Database for keeping track of token frequency is initialized.
 	db, err := gorm.Open(sqlite.Open(dbFilename), &gorm.Config{})
 	if err != nil {
@@ -49,8 +52,8 @@ func InitFrequencyDB(dbFilename string, tokens []string) (TokenCount, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Schema for database is created.
 
+	// Schema for database is created.
 	err = db.AutoMigrate(&util.Token{})
 	if err != nil {
 		return nil, err
@@ -69,13 +72,14 @@ func InitFrequencyDB(dbFilename string, tokens []string) (TokenCount, error) {
 		}
 	}()
 
+	// Token frequency is calculated to a map.
 	tokenCount := make(TokenCount)
-
 	for _, t := range tokens {
 		tokenCount[t] += 1
 	}
 	fmt.Println("Successfully calculated token count")
 
+	// Token frequency is saved to the database.
 	err = saveTokenFrequency(db, tokenCount)
 	if err != nil {
 		return nil, err
